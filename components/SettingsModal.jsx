@@ -1,7 +1,7 @@
 const { React } = require("powercord/webpack")
 const { Modal } = require("powercord/components/modal")
 const { FormTitle } = require("powercord/components")
-const { SelectInput, TextInput } = require("powercord/components/settings")
+const { SelectInput, TextInput, SwitchItem } = require("powercord/components/settings")
 
 const ENCODING_MODES = [
 	{
@@ -19,14 +19,19 @@ const ENCODING_MODES = [
 	{
 		label: "UpPeR-LoWeR",
 		value: "upperLower"
+	},
+	{
+		label: "Morse Code",
+		value: "morse"
+	},
+	{
+		label: "Disabled",
+		value: "disabled"
 	}
 ]
 
 class SettingsModal extends React.Component {
 	render() {
-		!this.props.getSetting("mode") && this.props.updateSetting("mode", "invisible")
-		!this.props.getSetting("separator") && this.props.updateSetting("separator", ";")
-
 		return (
 			<Modal className="powercord-text" size={Modal.Sizes.LARGE}>
 				<Modal.Header>
