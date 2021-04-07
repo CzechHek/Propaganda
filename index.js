@@ -81,16 +81,20 @@ class Propaganda extends Plugin {
 							parts[1] = parts[1].replace(/./g, char => (ENCODE_MORSE[char.toLowerCase()] || ENCODE_MORSE["?"]) + " ")
 							parts[0] = ""
 							break
+						case "hybridMorse":
+							parts[1] = parts[1].replace(/./g, char => char == " " ? "/ " : `0${char.charCodeAt(0).toString(36)}`.slice(-2).replace(/./g, code => ENCODE_MORSE[code] + " "))
+							break
 						default: return
 					}
 					let idChar = ID_CHARS[this.settings.get("mode")]
 					message.content = idChar + parts[1] + idChar + parts[0]
 				}
 			} else {
-				let parsed = (/[︀︁︂︃︄](.*)[︀︁︂︃︄](.*)/g).exec(text), secret
+				let parsed = (/[︀︁︂︃︄︅](.*)[︀︁︂︃︄︅](.*)/g).exec(text), secret
 				switch (text[0]) {
 					case ID_CHARS.invisible:
 						secret = parsed[1].replace(/./g, char => DECODE_CHARS[char]).replace(/.../g, code => String.fromCharCode(parseInt(code, 8)))
+						parsed[1] = parsed[2]
 						break
 					case ID_CHARS.scramble:
 						let message = [], deviation = Math.ceil((parsed[1].length - 2) / 2)
@@ -99,23 +103,22 @@ class Propaganda extends Plugin {
 							message[i2 <= 0 ? (2 * -i2) : (2 * i2 - 1)] = parsed[1][i]
 						}
 						secret = message.join("")
-						parsed[2] = parsed[1]
 						break
 					case ID_CHARS.snail:
 						secret = parsed[1].toLowerCase().split("").reverse().join("")
-						parsed[2] = parsed[1]
 						break
 					case ID_CHARS.upperLower:
 						secret = parsed[1].toLowerCase()
-						parsed[2] = parsed[1]
 						break
 					case ID_CHARS.morse:
-						secret = parsed[1].split(" ").map(code => DECODE_MORSE[code]).join("")
-						parsed[2] = parsed[1]
+						secret = parsed[1].split(" ").map(morse => DECODE_MORSE[morse]).join("")
+						break
+					case ID_CHARS.hybridMorse:
+						secret = parsed[1].split(" ").map(morse => morse == "/" ? "0w" : DECODE_MORSE[morse]).join("").replace(/../g, code => String.fromCharCode(parseInt(code, 36)))
 						break
 					default: return
 				}
-				message.content = parsed[2] + "\n> " + secret
+				message.content = parsed[1] + "\n> " + secret
 				this.updateMessage(message)
 			}
 		}
@@ -146,52 +149,53 @@ const ID_CHARS = {
 	scramble: "︁",		//U+FE01 : VARIATION SELECTOR-2 [VS2]
 	snail: "︂",			//U+FE02 : VARIATION SELECTOR-3 [VS3]
 	upperLower: "︃",	//U+FE03 : VARIATION SELECTOR-4 [VS4]
-	morse: "︄"			//U+FE04 : VARIATION SELECTOR-5 [VS5]
+	morse: "︄",			//U+FE04 : VARIATION SELECTOR-5 [VS5]
+	hybridMorse: "︅"	//U+FE05 : VARIATION SELECTOR-6 [VS6]
 }
 
 const DECODE_CHARS = _.invert(ENCODE_CHARS)
 
 const DECODE_MORSE = { 
-	'.-':		'a',
-	'-...':		'b',
-	'-.-.':		'c',
-	'-..':		'd',
-	'.':		'e',
-	'..-.':		'f',
-	'--.':		'g',
-	'....':		'h',
-	'..':		'i',
-	'.---':		'j',
-	'-.-':		'k',
-	'.-..':		'l',
-	'--':		'm',
-	'-.':		'n',
-	'---':		'o',
-	'.--.':		'p',
-	'--.-':		'q',
-	'.-.':		'r',
-	'...':		's',
-	'-':		't',
-	'..-':		'u',
-	'...-':		'v',
-	'.--':		'w',
-	'-..-':		'x',
-	'-.--':		'y',
-	'--..':		'z',
-	'-----':	'0',
-	'.----':	'1',
-	'..---':	'2',
-	'...--':	'3',
-	'....-':	'4',
-	'.....':	'5',
-	'-....':	'6',
-	'--...':	'7',
-	'---..':	'8',
-	'----.':	'9',
+	".-":		"a",
+	"-...":		"b",
+	"-.-.":		"c",
+	"-..":		"d",
+	".":		"e",
+	"..-.":		"f",
+	"--.":		"g",
+	"....":		"h",
+	"..":		"i",
+	".---":		"j",
+	"-.-":		"k",
+	".-..":		"l",
+	"--":		"m",
+	"-.":		"n",
+	"---":		"o",
+	".--.":		"p",
+	"--.-":		"q",
+	".-.":		"r",
+	"...":		"s",
+	"-":		"t",
+	"..-":		"u",
+	"...-":		"v",
+	".--":		"w",
+	"-..-":		"x",
+	"-.--":		"y",
+	"--..":		"z",
+	"-----":	"0",
+	".----":	"1",
+	"..---":	"2",
+	"...--":	"3",
+	"....-":	"4",
+	".....":	"5",
+	"-....":	"6",
+	"--...":	"7",
+	"---..":	"8",
+	"----.":	"9",
 	".-.-.-":	".",
 	"--..--":	",",
 	"..--..":	"?",
-	".----.":	"\'",
+	".----.":	"'",
 	"-.-.--":	"!",
 	"-..-.":	"/",
 	"-.--.":	"(",

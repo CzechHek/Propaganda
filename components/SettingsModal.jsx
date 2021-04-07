@@ -25,6 +25,10 @@ const ENCODING_MODES = [
 		value: "morse"
 	},
 	{
+		label: "Hybrid Morse",
+		value: "hybridMorse"
+	},
+	{
 		label: "Disabled",
 		value: "disabled"
 	}
