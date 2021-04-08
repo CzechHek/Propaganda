@@ -13,12 +13,8 @@ const ENCODING_MODES = [
 		value: "scramble"
 	},
 	{
-		label: "Snail Language",
-		value: "snail"
-	},
-	{
-		label: "UpPeR-LoWeR",
-		value: "upperLower"
+		label: "Reverse",
+		value: "reverse"
 	},
 	{
 		label: "Morse Code",
@@ -31,6 +27,29 @@ const ENCODING_MODES = [
 	{
 		label: "Disabled",
 		value: "disabled"
+	}
+]
+
+const CAPITALIZING_MODES = [
+	{
+		label: "Normal",
+		value: "normal"
+	},
+	{
+		label: "Random",
+		value: "random"
+	},
+	{
+		label: "UPPERCASE",
+		value: "uppercase"
+	},
+	{
+		label: "lowercase",
+		value: "lowercase"
+	},
+	{
+		label: "UpPeR-LoWeR",
+		value: "upperLower"
 	}
 ]
 
@@ -49,6 +68,14 @@ class SettingsModal extends React.Component {
 						options={ENCODING_MODES}
 						value={this.props.getSetting("mode")}
 						onChange={obj => this.props.updateSetting("mode", obj.value)}
+					/>
+					<SelectInput
+						children={["Capitalizing Mode"]}
+						note="How would you like your message to be capitalized?"
+						searchable={false}
+						options={CAPITALIZING_MODES}
+						value={this.props.getSetting("capitalizing")}
+						onChange={obj => this.props.updateSetting("capitalizing", obj.value)}
 					/>
 					<TextInput
 						children={["Separator"]}
