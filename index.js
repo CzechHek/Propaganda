@@ -61,7 +61,7 @@ class Propaganda extends Plugin {
 				if (parts.length == 2 && !text.includes("\`")) {
 					switch (this.settings.get("mode")) {
 						case "invisible":
-							parts[1] = parts[1].replace(/./g, char => `0${char.charCodeAt(0).toString(8)}`.slice(-3).replace(/./g, code => ENCODE_CHARS[code]))
+							parts[1] = parts[1].replace(/./gms, char => `0${char.charCodeAt(0).toString(8)}`.slice(-3).replace(/./g, code => ENCODE_CHARS[code]))
 							break
 						case "scramble":
 							let message = [], deviation = Math.ceil((parts[1].length - 2) / 2), i
@@ -73,18 +73,22 @@ class Propaganda extends Plugin {
 							parts[1] = parts[1].split("").reverse().join("")
 							parts[0] = ""
 							break
+						case "newline":
+							parts[1] = parts[1].replace(/\n/g, " ").split("").map((char, i, arr) => i == arr.length - 1 ? char : char + "\n").join("")
+							parts[0] = ""
+							break
 						case "morse":
-							parts[1] = parts[1].replace(/./g, char => (ENCODE_MORSE[char.toLowerCase()] || ENCODE_MORSE["?"]) + " ")
+							parts[1] = parts[1].replace(/\n/g, " ").replace(/./g, char => (ENCODE_MORSE[char.toLowerCase()] || ENCODE_MORSE["?"]) + " ")
 							parts[0] = ""
 							break
 						case "hybridMorse":
-							parts[1] = parts[1].replace(/./g, char => char == " " ? "/ " : `0${char.charCodeAt(0).toString(36)}`.slice(-2).replace(/./g, code => ENCODE_MORSE[code] + " "))
+							parts[1] = parts[1].replace(/./gms, char => char == " " ? "/ " : `0${char.charCodeAt(0).toString(36)}`.slice(-2).replace(/./g, code => ENCODE_MORSE[code] + " "))
 							break
 						default: return
 					}
 					switch (this.settings.get("capitalizing")) {
 						case "random":
-							parts[1] = parts[1].replace(/\S/g, char => char[Math.round(Math.random()) ? "toUpperCase" : "toLowerCase"]())
+							parts[1] = parts[1].replace(/\S/gm, char => char[Math.round(Math.random()) ? "toUpperCase" : "toLowerCase"]())
 							break
 						case "uppercase":
 							parts[1] = parts[1].toUpperCase()
@@ -94,14 +98,14 @@ class Propaganda extends Plugin {
 							break
 						case "upperLower":
 							let capitalized
-							parts[1] = parts[1].replace(/\S/g, char => char[(capitalized = !capitalized) ? "toUpperCase" : "toLowerCase"]())
+							parts[1] = parts[1].replace(/\S/gm, char => char[(capitalized = !capitalized) ? "toUpperCase" : "toLowerCase"]())
 							break
 					}
 					let idChar = ID_CHARS[this.settings.get("mode")]
 					message.content = idChar + parts[1] + idChar + parts[0] + (this.settings.get("capitalizing") != "normal" ? ID_CHARS.capitalizing : "")
 				}
 			} else {
-				let parsed = (/[︀︁︃︄︅︆︇](.*)[︀︁︃︄︅︆︇](.*)/g).exec(text), secret
+				let parsed = (/[︀︁︂︃︄︅](.*)[︀︁︂︃︄︅](.*)/gms).exec(text), secret = ""
 				if (parsed) {
 					switch (text[0]) {
 						case ID_CHARS.invisible:
@@ -109,18 +113,19 @@ class Propaganda extends Plugin {
 							parsed[1] = parsed[2]
 							break
 						case ID_CHARS.scramble:
-							let message = [], deviation = Math.ceil((parsed[1].length - 3) / 2), i, i2
+							let message = [], deviation = Math.ceil((parsed[1].length - 2) / 2), i, i2
 							for (i in parsed[1]) {
 								i2 = +i - deviation
 								message[i2 <= 0 ? (2 * -i2) : (2 * i2 - 1)] = parsed[1][i]
 							}
 							secret = message.join("")
 							break
-						case ID_CHARS.snail:
-							secret = parsed[1].toLowerCase().split("").reverse().join("")
-							break
 						case ID_CHARS.reverse:
 							secret = parsed[1].split("").reverse().join("")
+							break
+						case ID_CHARS.newline:
+							secret = parsed[1].replace(/\n/g, "")
+							parsed[1] = parsed[1].slice(0, 5).match(/.*\S/ms) + (parsed[1].length > 5 ? "..." : "")
 							break
 						case ID_CHARS.morse:
 							secret = parsed[1].split(" ").map(morse => DECODE_MORSE[morse]).join("")
@@ -131,7 +136,7 @@ class Propaganda extends Plugin {
 						default: return
 					}
 					if (secret && text.endsWith(ID_CHARS.capitalizing)) secret = secret.toLowerCase()
-					message.content = parsed[1] + "\n> " + secret
+					message.content = parsed[1] + "\n> " + secret.replace(/\n/g, "\n> ")
 					this.updateMessage(message)
 				}
 			}
@@ -161,12 +166,11 @@ const ENCODE_CHARS = {
 const ID_CHARS = {
 	invisible: "︀",		//U+FE00 : VARIATION SELECTOR-1 [VS1]
 	scramble: "︁",		//U+FE01 : VARIATION SELECTOR-2 [VS2]
-	snail: "︂",			//U+FE02 : VARIATION SELECTOR-3 [VS3]
-	upperLower: "︃",	//U+FE03 : VARIATION SELECTOR-4 [VS4]
+	reverse: "︂",		//U+FE02 : VARIATION SELECTOR-3 [VS3]
+	newline: "︃",		//U+FE03 : VARIATION SELECTOR-4 [VS4]
 	morse: "︄",			//U+FE04 : VARIATION SELECTOR-5 [VS5]
 	hybridMorse: "︅",	//U+FE05 : VARIATION SELECTOR-6 [VS6]
 	capitalizing: "︆",	//U+FE06 : VARIATION SELECTOR-7 [VS7]
-	reverse: "︇"		//U+FE07 : VARIATION SELECTOR-8 [VS8]
 }
 
 const DECODE_CHARS = _.invert(ENCODE_CHARS)

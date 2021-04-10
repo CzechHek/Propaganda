@@ -17,6 +17,10 @@ const ENCODING_MODES = [
 		value: "reverse"
 	},
 	{
+		label: "Newline",
+		value: "newline"
+	},
+	{
 		label: "Morse Code",
 		value: "morse"
 	},
