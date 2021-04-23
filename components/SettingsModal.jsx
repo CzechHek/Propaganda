@@ -33,6 +33,10 @@ const ENCODING_MODES = [
 		value: "flag"
 	},
 	{
+		label: "Periodic Table",
+		value: "periodic"
+	},
+	{
 		label: "Disabled",
 		value: "disabled"
 	}

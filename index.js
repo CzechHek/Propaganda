@@ -83,6 +83,9 @@ class Propaganda extends Plugin {
 						case "flag":
 							parts[1] = parts[1].replace(/\S/gm, char => _.sample(ENCODE_FLAGS[char.toLowerCase()] || ENCODE_FLAGS.x))
 							break
+						case "periodic":
+							parts[1] = parts[1].split("").map((char, i, arr, element) => char == " " ? "a " : (element = _.sample(ENCODE_PERIODIC[char.toLowerCase()] || ENCODE_PERIODIC["x"]), (i ? element : element[0].toUpperCase() + element.slice(1)) + (i == arr.length - 1 ? "?" : " "))).join("")
+							break
 						default: return
 					}
 					switch (this.settings.get("capitalizing")) {
@@ -104,7 +107,7 @@ class Propaganda extends Plugin {
 					message.content = idChar + parts[1] + idChar + (this.settings.get("mode") == "invisible" ? parts[0] : "") + (this.settings.get("capitalizing") != "normal" ? ID_CHARS.capitalizing : "")
 				}
 			} else {
-				let parsed = (/[︀︁︂︃︄︅︇](.*)[︀︁︂︃︄︅︇](.*)/gms).exec(text), secret = ""
+				let parsed = (/[︀︁︂︃︄︅︇︈](.*)[︀︁︂︃︄︅︇︈](.*)/gms).exec(text), secret = ""
 				if (parsed) {
 					switch (text[0]) {
 						case ID_CHARS.invisible:
@@ -134,6 +137,9 @@ class Propaganda extends Plugin {
 							break
 						case ID_CHARS.flag:
 							secret = parsed[1].replace(/\S{4}/gm, chars => DECODE_FLAGS[chars.slice(0, 2)] || chars)
+							break
+						case ID_CHARS.periodic:
+							secret = parsed[1].replace("?", "").split(" ").map((element) => DECODE_PERIODIC[element.toLowerCase()] || " ").join("")
 							break
 						default: return
 					}
@@ -173,7 +179,8 @@ const ID_CHARS = {
 	morse: "︄",			//U+FE04 : VARIATION SELECTOR-5 [VS5]
 	hybridMorse: "︅",	//U+FE05 : VARIATION SELECTOR-6 [VS6]
 	capitalizing: "︆",	//U+FE06 : VARIATION SELECTOR-7 [VS7]
-	flag: "︇"			//U+FE07 : VARIATION SELECTOR-8 [VS8]
+	flag: "︇",			//U+FE07 : VARIATION SELECTOR-8 [VS8]
+	periodic: "︈"		//U+FE08 : VARIATION SELECTOR-9 [VS9]
 }
 
 const DECODE_CHARS = _.invert(ENCODE_CHARS)
@@ -295,4 +302,34 @@ const DECODE_FLAGS = {
 	"🇿": "z"
 }
 
-Object.values(ENCODE_FLAGS).forEach((array, i) => array.forEach(char => DECODE_FLAGS[char] = Object.keys(ENCODE_FLAGS)[i]))
+const ENCODE_PERIODIC = {
+	a: ["aktinium", "stříbro", "hliník", "americium", "argon", "arsen", "astat", "zlato"],
+	b: ["bor", "baryum", "beryllium", "bohrium", "bismut", "berkelium", "brom"],
+	c: ["uhlík", "vápník", "kadmium", "cer", "kalifornium", "chlor", "curium", "kopernicium", "kobalt", "chrom", "cesium"],
+	d: ["dubnium", "darmstadtium", "dysprosium"],
+	e: ["erbium", "einsteinium", "europium"],
+	f: ["fluor", "železo", "flerovium", "fermium", "francium"],
+	g: ["gallium", "gadolinium", "germanium"],
+	h: ["vodík", "helium", "hafnium", "rtuť", "holmium", "hassium"],
+	i: ["jod", "indium", "iridium"],
+	j: ["johnmarstonium"],
+	k: ["draslík", "krypton"],
+	l: ["lanthan", "lithium", "lawrencium", "lutencium", "livermorium"],
+	m: ["moscovium", "mendelevium", "hořčík", "mangan", "molybden", "meitnerium"],
+	n: ["dusík", "sodík", "niob", "neodym", "neon", "nihonium", "nikl", "nobelium", "neptunium"],
+	o: ["kyslík", "oganesson", "osmium"],
+	p: ["fosfor", "protaktinium", "olovo", "palladium", "promethium", "polonium", "praseodym", "platina", "plutonium"],
+	q: ["quatroformaggium"],
+	r: ["radium", "rubidium", "rhenium", "rutherfordium", "roentgenium", "rhodium", "radon", "ruthenium"],
+	s: ["síra", "antimon", "skandium", "selen", "seaborgium", "křemík", "samarium", "cín", "stroncium"],
+	t: ["tantal", "terbium", "technecium", "tellur", "thorium", "titan", "thallium", "thulium", "tennessin"],
+	u: ["uran"],
+	v: ["vanad"],
+	w: ["wolfram"],
+	x: ["xenon"],
+	y: ["yttrium", "ytterbium"],
+	z: ["zinek", "zirkonium"]
+}
+
+let DECODE_PERIODIC = {}
+Object.values(ENCODE_PERIODIC).forEach((array, i) => array.forEach(element => DECODE_PERIODIC[element] = Object.keys(ENCODE_PERIODIC)[i]))
