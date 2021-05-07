@@ -75,6 +75,9 @@ class Propaganda extends Plugin {
 							case "newline":
 								parts[1] = parts[1].replace(/\n/g, " ").split("").map((char, i, arr) => i == arr.length - 1 ? char : char + "\n").join("")
 								break
+							case "hybridNewline":
+								parts[1] = parts[1].replace(/./gms, char => `0${char.charCodeAt(0).toString(36)}`.slice(-2).replace(/./g, code => "\n".repeat(parseInt(code, 36)) + CHAR_SEPARATOR)).slice(0, -1)
+								break
 							case "morse":
 								parts[1] = parts[1].replace(/\n/g, " ").replace(/./g, char => (ENCODE_MORSE[char.toLowerCase()] || ENCODE_MORSE["?"]) + " ")
 								break
@@ -95,7 +98,7 @@ class Propaganda extends Plugin {
 								break
 							default: return
 						}
-						if (!["invisible", "hybridSpoiler"].includes(this.settings.get("mode"))) {
+						if (!["invisible", "hybridSpoiler", "hybridNewline"].includes(this.settings.get("mode"))) {
 							parts[0] = ""
 							if (this.settings.get("capitalizing") != "normal") {
 								capitalizing = ID_CHARS.capitalizing
@@ -120,7 +123,7 @@ class Propaganda extends Plugin {
 						message.content = idChar + parts[0] + idChar + parts[1] + idChar + capitalizing
 					}
 				} else {
-					let parsed = text.split(/[︀︁︂︃︄︅︇︈︉︊]/).slice(1), secret
+					let parsed = text.split(/[︀︁︂︃︄︅︇︈︉︊︋]/).slice(1), secret
 					if (parsed.length) {
 						switch (text[0]) {
 							case ID_CHARS.invisible:
@@ -141,6 +144,10 @@ class Propaganda extends Plugin {
 							case ID_CHARS.newline:
 								secret = parsed[1].replace(/\n/g, "")
 								parsed[1] = parsed[1].slice(0, 5).match(/.*\S/ms) + (parsed[1].length > 5 ? "..." : "")
+								break
+							case ID_CHARS.hybridNewline:
+								secret = parsed[1].split(CHAR_SEPARATOR).map(lines => lines.length.toString(36)).join("").replace(/../g, code => String.fromCharCode(parseInt(code, 36)))
+								parsed[1] = "\n\n..."
 								break
 							case ID_CHARS.morse:
 								secret = parsed[1].split(" ").map(morse => DECODE_MORSE[morse]).join("")
@@ -204,8 +211,11 @@ const ID_CHARS = {
 	flag: "︇",			//U+FE07 : VARIATION SELECTOR-8 [VS8]
 	periodic: "︈",		//U+FE08 : VARIATION SELECTOR-9 [VS9]
 	spoiler: "︉",		//U+FE09 : VARIATION SELECTOR-10 [VS10]
-	hybridSpoiler: "︊"	//U+FE0A : VARIATION SELECTOR-11 [VS11]
+	hybridSpoiler: "︊",	//U+FE0A : VARIATION SELECTOR-11 [VS11]
+	hybridNewline: "︋"	//U+FE0B : VARIATION SELECTOR-12 [VS12]
 }
+
+const CHAR_SEPARATOR = "​"	//U+200B : ZERO WIDTH SPACE [ZWSP]
 
 const DECODE_CHARS = _.invert(ENCODE_CHARS)
 

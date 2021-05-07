@@ -21,6 +21,10 @@ const ENCODING_MODES = [
 		value: "newline"
 	},
 	{
+		label: "Hybrid Newline",
+		value: "hybridNewline"
+	},
+	{
 		label: "Morse Code",
 		value: "morse"
 	},
