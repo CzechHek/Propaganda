@@ -37,6 +37,14 @@ const ENCODING_MODES = [
 		value: "periodic"
 	},
 	{
+		label: "Spoiler",
+		value: "spoiler"
+	},
+	{
+		label: "Hybrid Spoiler",
+		value: "hybridSpoiler"
+	},
+	{
 		label: "Disabled",
 		value: "disabled"
 	}
