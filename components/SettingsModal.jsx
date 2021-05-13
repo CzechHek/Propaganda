@@ -49,6 +49,14 @@ const ENCODING_MODES = [
 		value: "hybridSpoiler"
 	},
 	{
+		label: "Tags",
+		value: "tags"
+	},
+	{
+		label: "Hybrid Tags",
+		value: "hybridTags"
+	},
+	{
 		label: "Disabled",
 		value: "disabled"
 	}
@@ -93,14 +101,17 @@ class SettingsModal extends React.Component {
 						value={this.props.getSetting("mode")}
 						onChange={obj => this.props.updateSetting("mode", obj.value)}
 					/>
-					<SelectInput
-						children={["Capitalizing Mode"]}
-						note="How would you like your message to be capitalized?"
-						searchable={false}
-						options={CAPITALIZING_MODES}
-						value={this.props.getSetting("capitalizing")}
-						onChange={obj => this.props.updateSetting("capitalizing", obj.value)}
-					/>
+					{!["invisible", "morse", "hybridMorse", "flag", "hybridSpoiler", "tags", "hybridTags"].includes(this.props.getSetting("mode")) &&
+						<SelectInput
+							children={["Capitalizing Mode"]}
+							note="How would you like your message to be capitalized?"
+							searchable={false}
+							options={CAPITALIZING_MODES}
+							value={this.props.getSetting("capitalizing")}
+							onChange={obj => this.props.updateSetting("capitalizing", obj.value)}
+						/>
+					}
+
 					<TextInput
 						children={["Separator"]}
 						note="What character should separate visible and secret parts of message?"

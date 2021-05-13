@@ -62,7 +62,7 @@ class Propaganda extends Plugin {
 					if (parts.length == 2 && !text.includes("\`")) {
 						switch (this.settings.get("mode")) {
 							case "invisible":
-								parts[1] = parts[1].replace(/./gms, char => `0${char.charCodeAt(0).toString(8)}`.slice(-3).replace(/./g, code => ENCODE_CHARS[code]))
+								parts[1] = parts[1].replace(/./gms, char => `0${char.charCodeAt(0).toString(8)}`.slice(-3).replace(/./g, code => ENCODE_INVISIBLE[code]))
 								break
 							case "scramble":
 								let message = [], deviation = Math.ceil((parts[1].length - 2) / 2), i
@@ -96,9 +96,15 @@ class Propaganda extends Plugin {
 							case "hybridSpoiler":
 								parts[1] = `||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||||||||||${parts[1]}`
 								break
+							case "tags":
+								parts[1] = parts[1].replace(/./gm, char => ENCODE_TAGS[char] || ENCODE_TAGS["?"])
+								break
+							case "hybridTags":
+								parts[1] = parts[1].replace(/./gms, char => `0${char.charCodeAt(0).toString(36)}`.slice(-2).replace(/./g, code => ENCODE_TAGS[code]))
+								break
 							default: return
 						}
-						if (!["invisible", "hybridSpoiler", "hybridNewline"].includes(this.settings.get("mode"))) {
+						if (!["invisible", "hybridSpoiler", "hybridNewline", "tags", "hybridTags"].includes(this.settings.get("mode"))) {
 							parts[0] = ""
 							if (this.settings.get("capitalizing") != "normal") {
 								capitalizing = ID_CHARS.capitalizing
@@ -123,11 +129,11 @@ class Propaganda extends Plugin {
 						message.content = idChar + parts[0] + idChar + parts[1] + idChar + capitalizing
 					}
 				} else {
-					let parsed = text.split(/[︀︁︂︃︄︅︇︈︉︊︋]/).slice(1), secret
+					let parsed = text.split(/[︀︁︂︃︄︅︇︈︉︊︋︌︍]/).slice(1), secret
 					if (parsed.length) {
 						switch (text[0]) {
 							case ID_CHARS.invisible:
-								secret = parsed[1].replace(/./g, char => DECODE_CHARS[char]).replace(/.../g, code => String.fromCharCode(parseInt(code, 8)))
+								secret = parsed[1].replace(/./g, char => DECODE_INVISIBLE[char]).replace(/.../g, code => String.fromCharCode(parseInt(code, 8)))
 								parsed[1] = parsed[0]
 								break
 							case ID_CHARS.scramble:
@@ -139,7 +145,7 @@ class Propaganda extends Plugin {
 								secret = message.join("")
 								break
 							case ID_CHARS.reverse:
-								secret = parsed[1].split("").reverse().join("")
+								secret = [...parsed[1]].reverse().join("")
 								break
 							case ID_CHARS.newline:
 								secret = parsed[1].replace(/\n/g, "")
@@ -156,16 +162,24 @@ class Propaganda extends Plugin {
 								secret = parsed[1].split(" ").map(morse => morse == "/" ? "0w" : DECODE_MORSE[morse]).join("").replace(/../g, code => String.fromCharCode(parseInt(code, 36)))
 								break
 							case ID_CHARS.flag:
-								secret = parsed[1].replace(/\S{4}/gm, chars => DECODE_FLAGS[chars.slice(0, 2)] || chars)
+								secret = parsed[1].replace(/\S{2}/gmu, chars => DECODE_FLAGS[chars.slice(0, 2)] || chars)
 								break
 							case ID_CHARS.periodic:
-								secret = parsed[1].replace("?", "").split(" ").map((element) => DECODE_PERIODIC[element.toLowerCase()] || " ").join("")
+								secret = parsed[1].slice(0, -1).split(" ").map(element => DECODE_PERIODIC[element.toLowerCase()] || " ").join("")
 								break
 							case ID_CHARS.spoiler:
 								secret = parsed[1].replace(/\|{2}/gm, () => "")
 								break
 							case ID_CHARS.hybridSpoiler:
 								secret = parsed[1].slice(1000)
+								parsed[1] = parsed[0]
+								break
+							case ID_CHARS.tags:
+								secret = parsed[1].replace(/./gmu, char => DECODE_TAGS[char])
+								parsed[1] = parsed[0]
+								break
+							case ID_CHARS.hybridTags:
+								secret = parsed[1].replace(/./gu, char => DECODE_TAGS[char]).replace(/../g, code => String.fromCharCode(parseInt(code, 36)))
 								parsed[1] = parsed[0]
 								break
 							default: return
@@ -189,7 +203,7 @@ class Propaganda extends Plugin {
 
 module.exports = Propaganda
 
-const ENCODE_CHARS = {
+const ENCODE_INVISIBLE = {
 	0: "￰",	//U+FFF0 : <reserved>
 	1: "￱",	//U+FFF1 : <reserved>
 	2: "￲",	//U+FFF2 : <reserved>
@@ -199,6 +213,8 @@ const ENCODE_CHARS = {
 	6: "￶",	//U+FFF6 : <reserved>
 	7: "￷"	//U+FFF7 : <reserved>
 }
+
+const DECODE_INVISIBLE = _.invert(ENCODE_INVISIBLE)
 
 const ID_CHARS = {
 	invisible: "︀",		//U+FE00 : VARIATION SELECTOR-1 [VS1]
@@ -212,12 +228,12 @@ const ID_CHARS = {
 	periodic: "︈",		//U+FE08 : VARIATION SELECTOR-9 [VS9]
 	spoiler: "︉",		//U+FE09 : VARIATION SELECTOR-10 [VS10]
 	hybridSpoiler: "︊",	//U+FE0A : VARIATION SELECTOR-11 [VS11]
-	hybridNewline: "︋"	//U+FE0B : VARIATION SELECTOR-12 [VS12]
+	hybridNewline: "︋",	//U+FE0B : VARIATION SELECTOR-12 [VS12]
+	tags: "︌",			//U+FE0C : VARIATION SELECTOR-13 [VS13]
+	hybridTags: "︍"		//U+FE0D : VARIATION SELECTOR-14 [VS14]
 }
 
 const CHAR_SEPARATOR = "​"	//U+200B : ZERO WIDTH SPACE [ZWSP]
-
-const DECODE_CHARS = _.invert(ENCODE_CHARS)
 
 const DECODE_MORSE = { 
 	".-":		"a",
@@ -367,3 +383,101 @@ const ENCODE_PERIODIC = {
 
 let DECODE_PERIODIC = {}
 Object.values(ENCODE_PERIODIC).forEach((array, i) => array.forEach(element => DECODE_PERIODIC[element] = Object.keys(ENCODE_PERIODIC)[i]))
+
+/*
+Suggested by pointy#0001
+Range: U+E0020 - U+E007E
+*/
+const ENCODE_TAGS = {
+	A: "󠁁",
+	B: "󠁂",
+	C: "󠁃",
+	D: "󠁄",
+	E: "󠁅",
+	F: "󠁆",
+	G: "󠁇",
+	H: "󠁈",
+	I: "󠁉",
+	J: "󠁊",
+	K: "󠁋",
+	L: "󠁌",
+	M: "󠁍",
+	N: "󠁎",
+	O: "󠁏",
+	P: "󠁐",
+	Q: "󠁑",
+	R: "󠁒",
+	S: "󠁓",
+	T: "󠁔",
+	U: "󠁕",
+	V: "󠁖",
+	W: "󠁗",
+	X: "󠁘",
+	Y: "󠁙",
+	Z: "󠁚",
+	a: "󠁡",
+	b: "󠁢",
+	c: "󠁣",
+	d: "󠁤",
+	e: "󠁥",
+	f: "󠁦",
+	g: "󠁧",
+	h: "󠁨",
+	i: "󠁩",
+	j: "󠁪",
+	k: "󠁫",
+	l: "󠁬",
+	m: "󠁭",
+	n: "󠁮",
+	o: "󠁯",
+	p: "󠁰",
+	q: "󠁱",
+	r: "󠁲",
+	s: "󠁳",
+	t: "󠁴",
+	u: "󠁵",
+	v: "󠁶",
+	w: "󠁷",
+	x: "󠁸",
+	y: "󠁹",
+	z: "󠁺",
+	0: "󠀰",
+	1: "󠀱",
+	2: "󠀲",
+	3: "󠀳",
+	4: "󠀴",
+	5: "󠀵",
+	6: "󠀶",
+	7: "󠀷",
+	8: "󠀸",
+	9: "󠀹",
+	" ": "󠀠",
+	"!": "󠀡",
+	"\"": "󠀢",
+	"#": "󠀣",
+	"$": "󠀤",
+	"%": "󠀥",
+	"&": "󠀦",
+	"\'": "󠀧",
+	"(": "󠀨",
+	")": "󠀩",
+	"*": "󠀪",
+	"+": "󠀫",
+	",": "󠀬",
+	"-": "󠀭",
+	".": "󠀮",
+	"/": "󠀯",
+	":": "󠀺",
+	";": "󠀻",
+	"<": "󠀼",
+	"=": "󠀽",
+	">": "󠀾",
+	"?": "󠀿",
+	"@": "󠁀",
+	"{": "󠁻",
+	"|": "󠁼",
+	"}": "󠁽",
+	"~": "󠁾"
+}
+
+const DECODE_TAGS = _.invert(ENCODE_TAGS)

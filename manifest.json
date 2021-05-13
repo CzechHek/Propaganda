@@ -1,7 +1,7 @@
 {
   "name": "Propaganda",
-  "description": "Talk like never before.",
+  "description": "Powercord plugin for message encoding.",
   "author": "CzechHek",
   "license": "MIT",
-  "version": "2.1.0"
+  "version": "2.2.0"
 }
