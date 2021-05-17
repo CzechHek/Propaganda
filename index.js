@@ -10,6 +10,7 @@ const SettingsButton = require("./components/SettingsButton")
 const { React, getModule, messages: MessageEvents, FluxDispatcher } = require("powercord/webpack")
 
 const ChannelTextAreaContainer = getModule((m) => m.type && m.type.render && m.type.render.displayName === "ChannelTextAreaContainer", false)
+let userId
 
 class Propaganda extends Plugin {
 	constructor () {
@@ -18,7 +19,7 @@ class Propaganda extends Plugin {
 		this.ConnectedSettingsModal = this.settings.connectStore(SettingsModal)
 	}
 
-	startPlugin() {
+	async startPlugin() {
 		!this.settings.get("mode") && this.settings.set("mode", "invisible")
 		!this.settings.get("capitalizing") && this.settings.set("capitalizing", "normal")
 		this.settings.get("separator") === undefined && this.settings.set("separator", ";")
@@ -43,6 +44,17 @@ class Propaganda extends Plugin {
 				else if (args[0].type == "LOAD_MESSAGES_SUCCESS") args[0].messages.forEach(message => this.handleMessage(message))
 			}
 		})
+
+		//https://github.com/Juby210/bdCompat/blob/master/modules/PluginManager.js#L35
+		const ConnectionStore = await getModule(["isTryingToConnect", "isConnected"])
+		const listener = () => {
+			if (ConnectionStore.isConnected()) {
+				ConnectionStore.removeChangeListener(listener)
+				userId = getModule(["getCurrentUser"], false).getCurrentUser().id
+			}
+		}
+		if (ConnectionStore.isConnected()) listener()
+		else ConnectionStore.addChangeListener(listener)
 	}
 
 	updateMessage (message) {
@@ -58,8 +70,8 @@ class Propaganda extends Plugin {
 			let text = message.content
 			if (text) {
 				if (sending) {
-					let parts = text.split(this.settings.get("separator")), capitalizing = ""
-					if (parts.length == 2 && !text.includes("\`")) {
+					let parts = text.split(this.settings.get("separator")), idChar = ID_CHARS[this.settings.get("mode")], capitalizing = "", exclusions = ""
+					if ([2, 3].includes(parts.length) && !text.includes("\`")) {
 						switch (this.settings.get("mode")) {
 							case "invisible":
 								parts[1] = parts[1].replace(/./gms, char => `0${char.charCodeAt(0).toString(8)}`.slice(-3).replace(/./g, code => ENCODE_INVISIBLE[code]))
@@ -125,12 +137,15 @@ class Propaganda extends Plugin {
 								}
 							}
 						}
-						let idChar = ID_CHARS[this.settings.get("mode")]
-						message.content = idChar + parts[0] + idChar + parts[1] + idChar + capitalizing
+						if (parts[2]) {
+							let ids = Array.from(parts[2].matchAll(/<@!(\d+)>/gm), a => a[1]).filter(id => id != userId && id != "354279789256769539")
+							if (ids.length) exclusions = idChar + ids.join("").replace(/./g, digit => ENCODE_TAGS[digit])
+						}
+						message.content = idChar + parts[0] + idChar + parts[1] + idChar + capitalizing + exclusions
 					}
 				} else {
 					let parsed = text.split(/[︀︁︂︃︄︅︇︈︉︊︋︌︍]/).slice(1), secret
-					if (parsed.length) {
+					if (parsed.length && (!parsed[3] || !parsed[3].replace(/./gu, tag => DECODE_TAGS[tag]).includes(userId))) {
 						switch (text[0]) {
 							case ID_CHARS.invisible:
 								secret = parsed[1].replace(/./g, char => DECODE_INVISIBLE[char]).replace(/.../g, code => String.fromCharCode(parseInt(code, 8)))
