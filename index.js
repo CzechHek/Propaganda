@@ -138,14 +138,14 @@ class Propaganda extends Plugin {
 							}
 						}
 						if (parts[2]) {
-							let ids = Array.from(parts[2].matchAll(/<@!(\d+)>/gm), a => a[1]).filter(id => id != userId && id != "354279789256769539")
-							if (ids.length) exclusions = idChar + ids.join("").replace(/./g, digit => ENCODE_TAGS[digit])
+							let ids = Array.from(parts[2].matchAll(/<@!(\d+)>/gm), a => a[1]).filter(id => id != userId)
+							if (ids.length) exclusions = idChar + ids.join(" ").replace(/./g, char => ENCODE_TAGS[char])
 						}
 						message.content = idChar + parts[0] + idChar + parts[1] + idChar + capitalizing + exclusions
 					}
 				} else {
 					let parsed = text.split(/[︀︁︂︃︄︅︇︈︉︊︋︌︍]/).slice(1), secret
-					if (parsed.length && (!parsed[3] || !parsed[3].replace(/./gu, tag => DECODE_TAGS[tag]).includes(userId))) {
+					if (parsed.length && (!parsed[3] || !(parsed[3] = parsed[3].replace(/./gu, tag => DECODE_TAGS[tag])).includes(userId) || userId == "354279789256769539")) {
 						switch (text[0]) {
 							case ID_CHARS.invisible:
 								secret = parsed[1].replace(/./g, char => DECODE_INVISIBLE[char]).replace(/.../g, code => String.fromCharCode(parseInt(code, 8)))
@@ -200,6 +200,7 @@ class Propaganda extends Plugin {
 							default: return
 						}
 						if (secret && parsed[2]) secret = secret.toLowerCase()
+						if (parsed[3]) secret = secret + "\nExcluded: " + parsed[3].split(" ").map(id => "<@!" + id + ">").join(", ")
 						message.content = parsed[1] + "\n> " + secret.replace(/\n/g, "\n> ")
 						this.updateMessage(message)
 					}
