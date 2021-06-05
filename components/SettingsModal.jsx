@@ -57,6 +57,10 @@ const ENCODING_MODES = [
 		value: "hybridTags"
 	},
 	{
+		label: "Countries",
+		value: "countries"
+	},
+	{
 		label: "Disabled",
 		value: "disabled"
 	}

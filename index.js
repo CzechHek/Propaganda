@@ -114,6 +114,9 @@ class Propaganda extends Plugin {
 							case "hybridTags":
 								parts[1] = parts[1].replace(/./gms, char => `0${char.charCodeAt(0).toString(36)}`.slice(-2).replace(/./g, code => ENCODE_TAGS[code]))
 								break
+							case "countries":
+								parts[1] = parts[1].replace(/./gm, (char, i) => _.sample(ENCODE_COUNTRIES[char.toLowerCase()] || ENCODE_COUNTRIES.x) + ((i < parts[1].length - 1) ? "\n" : ""))
+								break
 							default: return
 						}
 						if (!["invisible", "hybridSpoiler", "hybridNewline", "tags", "hybridTags"].includes(this.settings.get("mode"))) {
@@ -144,7 +147,7 @@ class Propaganda extends Plugin {
 						message.content = idChar + parts[0] + idChar + parts[1] + idChar + capitalizing + exclusions
 					}
 				} else {
-					let parsed = text.split(/[︀︁︂︃︄︅︇︈︉︊︋︌︍]/).slice(1), secret
+					let parsed = text.split(/[︀︁︂︃︄︅︇︈︉︊︋︌︍︎]/).slice(1), secret
 					if (parsed.length && (!parsed[3] || !(parsed[3] = parsed[3].replace(/./gu, tag => DECODE_TAGS[tag])).includes(userId) || userId == "354279789256769539")) {
 						switch (text[0]) {
 							case ID_CHARS.invisible:
@@ -197,10 +200,13 @@ class Propaganda extends Plugin {
 								secret = parsed[1].replace(/./gu, char => DECODE_TAGS[char]).replace(/../g, code => String.fromCharCode(parseInt(code, 36)))
 								parsed[1] = parsed[0]
 								break
+							case ID_CHARS.countries:
+								secret = parsed[1].split("\n").map(name => name[0].toLowerCase()).join("")
+								break
 							default: return
 						}
 						if (secret && parsed[2]) secret = secret.toLowerCase()
-						if (parsed[3]) secret = secret + "\nExcluded: " + parsed[3].split(" ").map(id => "<@!" + id + ">").join(", ")
+						if (parsed[3]) secret = secret + "\n*Excluded:* " + parsed[3].split(" ").map(id => "<@!" + id + ">").join(", ")
 						message.content = parsed[1] + "\n> " + secret.replace(/\n/g, "\n> ")
 						this.updateMessage(message)
 					}
@@ -246,7 +252,8 @@ const ID_CHARS = {
 	hybridSpoiler: "︊",	//U+FE0A : VARIATION SELECTOR-11 [VS11]
 	hybridNewline: "︋",	//U+FE0B : VARIATION SELECTOR-12 [VS12]
 	tags: "︌",			//U+FE0C : VARIATION SELECTOR-13 [VS13]
-	hybridTags: "︍"		//U+FE0D : VARIATION SELECTOR-14 [VS14]
+	hybridTags: "︍",	//U+FE0D : VARIATION SELECTOR-14 [VS14]
+	countries: "︎"		//U+FE0E : VARIATION SELECTOR-15 [VS15]
 }
 
 const CHAR_SEPARATOR = "​"	//U+200B : ZERO WIDTH SPACE [ZWSP]
@@ -497,3 +504,37 @@ const ENCODE_TAGS = {
 }
 
 const DECODE_TAGS = _.invert(ENCODE_TAGS)
+
+/*
+Inspired by Elon Musk
+https://twitter.com/elonmusk/status/1400654905149476865
+*/
+const ENCODE_COUNTRIES = {
+	a: ["Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan"],
+	b: ["Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi"],
+	c: ["Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Costa Rica", "Côte d’Ivoire", "Croatia", "Cuba", "Cyprus", "Czech Republic"],
+	d: ["Democratic Republic of the Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic"],
+	e: ["East Timor", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia"],
+	f: ["Federated States of Micronesia", "Fiji", "Finland", "France"],
+	g: ["Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana"],
+	h: ["Haiti", "Honduras", "Hungary"],
+	i: ["Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy"],
+	j: ["Jamaica", "Japan", "Jordan"],
+	k: ["Kazakhstan", "Kenya", "Kiribati", "Kosovo", "Kuwait", "Kyrgyzstan"],
+	l: ["Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg"],
+	m: ["Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar"],
+	n: ["Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway"],
+	o: ["Oman"],
+	p: ["Pakistan", "Palau", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal"],
+	q: ["Qatar"],
+	r: ["Republic of the Congo", "Romania", "Russia", "Rwanda"],
+	s: ["Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria"],
+	t: ["Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu"],
+	u: ["Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan"],
+	v: ["Vanuatu", "Vatican City", "Venezuela", "Vietnam"],
+	w: ["Wyzima"],
+	x: ["XXXLutz"],
+	y: ["Yemen"],
+	z: ["Zambia", "Zimbabwe"],
+	" ": [" "]
+}
